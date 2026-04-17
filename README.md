@@ -1,4 +1,4 @@
-# 💊 PharmaCare — Pharmacy Management System
+# 💊 PharmaCare — Pharma Data & Billing Solution
 
 A full-stack pharmacy management dashboard built with **FastAPI**, **PostgreSQL** (raw SQL via psycopg2), and a modern dark-themed web UI.
 
