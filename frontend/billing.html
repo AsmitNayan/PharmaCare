@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PharmaCare — Process medicine sales and billing">
+    <title>PharmaCare — Billing</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="app-layout">
+        <!-- ========== SIDEBAR ========== -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">💊</div>
+                <div>
+                    <h2>PharmaCare</h2>
+                    <span>Management System</span>
+                </div>
+            </div>
+
+            <nav>
+                <a href="/dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/medicines-page">
+                    <span class="nav-icon">💊</span>
+                    <span>Medicines</span>
+                </a>
+                <a href="/add-page">
+                    <span class="nav-icon">➕</span>
+                    <span>Add Medicine</span>
+                </a>
+                <a href="/billing-page" class="active">
+                    <span class="nav-icon">🧾</span>
+                    <span>Billing</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="#" onclick="logout(); return false;">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- ========== MAIN CONTENT ========== -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h1>Billing</h1>
+                    <p>Process sales and generate bills</p>
+                </div>
+            </div>
+
+            <div class="billing-grid">
+                <!-- Left: Sale Form -->
+                <div>
+                    <div class="billing-form-card">
+                        <h2>🧾 New Sale</h2>
+
+                        <form id="billingForm">
+                            <div class="form-group">
+                                <label for="billingMedicine">Select Medicine</label>
+                                <select id="billingMedicine" required>
+                                    <option value="">— Loading medicines... —</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="billingQty">Quantity</label>
+                                <input type="number" id="billingQty" min="1" placeholder="Enter quantity" required>
+                            </div>
+
+                            <div class="price-display">
+                                <div class="label">Total Amount</div>
+                                <div class="amount" id="billingTotal">₹0.00</div>
+                            </div>
+
+                            <button type="submit" class="btn btn-success" style="width:100%;">
+                                💰 Complete Sale
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Receipt -->
+                    <div class="receipt mt-2" id="saleReceipt">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Right: Sales History -->
+                <div class="table-container" style="align-self: start;">
+                    <div class="table-header">
+                        <h2>📋 Sales History</h2>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Medicine</th>
+                                <th>Qty</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesHistoryBody">
+                            <tr><td colspan="4"><div class="loading-spinner"></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

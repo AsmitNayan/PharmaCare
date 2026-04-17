@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PharmaCare — Add a new medicine to the inventory">
+    <title>PharmaCare — Add Medicine</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="app-layout">
+        <!-- ========== SIDEBAR ========== -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">💊</div>
+                <div>
+                    <h2>PharmaCare</h2>
+                    <span>Management System</span>
+                </div>
+            </div>
+
+            <nav>
+                <a href="/dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/medicines-page">
+                    <span class="nav-icon">💊</span>
+                    <span>Medicines</span>
+                </a>
+                <a href="/add-page" class="active">
+                    <span class="nav-icon">➕</span>
+                    <span>Add Medicine</span>
+                </a>
+                <a href="/billing-page">
+                    <span class="nav-icon">🧾</span>
+                    <span>Billing</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="#" onclick="logout(); return false;">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- ========== MAIN CONTENT ========== -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h1>Add Medicine</h1>
+                    <p>Add a new medicine to your inventory</p>
+                </div>
+            </div>
+
+            <!-- Add Medicine Form -->
+            <div class="form-card">
+                <h2>💊 Medicine Details</h2>
+
+                <form id="addMedicineForm">
+                    <div class="form-group">
+                        <label for="medName">Medicine Name</label>
+                        <input type="text" id="medName" placeholder="e.g. Paracetamol 500mg" required autofocus>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="medPrice">Price (₹)</label>
+                            <input type="number" id="medPrice" step="0.01" min="0" placeholder="e.g. 25.50" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="medQuantity">Quantity</label>
+                            <input type="number" id="medQuantity" min="0" placeholder="e.g. 100" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="medExpiry">Expiry Date</label>
+                        <input type="date" id="medExpiry" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">➕ Add Medicine</button>
+                        <button type="reset" class="btn btn-outline">Clear Form</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

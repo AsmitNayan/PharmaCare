@@ -1,0 +1,438 @@
+========================================================
+   PharmaCare - Pharmacy Management System
+   PROJECT EXPLANATION
+========================================================
+
+This document explains how the project works,
+focusing on the DATABASE side (DBMS concepts).
+
+
+========================================================
+1. PROJECT OVERVIEW
+========================================================
+
+PharmaCare is a web-based pharmacy management system.
+
+An admin logs in and can:
+  - Add, view, update, delete medicines
+  - Process sales (billing)
+  - See alerts for low stock and expiring medicines
+  - View dashboard with summary statistics
+
+The frontend (HTML/CSS/JS) provides the user interface.
+The backend (Python FastAPI) handles the logic.
+The database (PostgreSQL) stores all the data.
+
+The frontend sends requests to the backend using
+JavaScript's fetch() function. The backend runs SQL
+queries on PostgreSQL and sends results back as JSON.
+
+Flow:
+  Browser (HTML/JS) ---> Backend (FastAPI/Python) ---> Database (PostgreSQL)
+                    <---                          <---
+
+
+========================================================
+2. DATABASE DESIGN
+========================================================
+
+Database Name: pharmacy_db
+
+We have THREE tables:
+
+
+TABLE 1: admin
+-------------------------------------------------
+| Column   | Type         | Constraints          |
+|----------|------------- |----------------------|
+| id       | SERIAL       | PRIMARY KEY          |
+| username | VARCHAR(50)  | UNIQUE, NOT NULL     |
+| password | VARCHAR(100) | NOT NULL             |
+-------------------------------------------------
+
+Purpose: Stores admin login credentials.
+Default admin is inserted automatically:
+  username = 'admin'
+  password = 'admin123'
+
+SERIAL means the id auto-increments (1, 2, 3, ...).
+UNIQUE means no two admins can have the same username.
+
+
+TABLE 2: medicines
+---------------------------------------------------------
+| Column      | Type          | Constraints             |
+|-------------|---------------|-------------------------|
+| medicine_id | SERIAL        | PRIMARY KEY             |
+| name        | VARCHAR(100)  | NOT NULL                |
+| price       | NUMERIC(10,2) | NOT NULL                |
+| quantity    | INTEGER       | NOT NULL                |
+| expiry_date | DATE          | NOT NULL                |
+---------------------------------------------------------
+
+Purpose: Stores all medicines in the pharmacy inventory.
+
+NUMERIC(10,2) means up to 10 digits with 2 decimal places.
+  Example: 25.50, 999.99, 12345678.99
+
+DATE stores dates like '2027-06-15'.
+
+
+TABLE 3: sales
+---------------------------------------------------------
+| Column        | Type          | Constraints            |
+|---------------|---------------|------------------------|
+| sale_id       | SERIAL        | PRIMARY KEY            |
+| medicine_id   | INTEGER       | FOREIGN KEY            |
+| quantity_sold | INTEGER       | NOT NULL               |
+| total_price   | NUMERIC(10,2) | NOT NULL               |
+| sale_date     | TIMESTAMP     | DEFAULT CURRENT_TIME   |
+---------------------------------------------------------
+
+Purpose: Records every sale transaction.
+
+FOREIGN KEY: medicine_id REFERENCES medicines(medicine_id)
+  This means every sale MUST point to a valid medicine.
+  You cannot insert a sale for a medicine that does not exist.
+
+DEFAULT CURRENT_TIMESTAMP means the sale_date is
+  automatically set to the current date and time.
+
+
+RELATIONSHIPS:
+  admin       --> standalone (no relations)
+  medicines   --> parent table
+  sales       --> child table (references medicines)
+
+  One medicine can have MANY sales = One-to-Many relationship.
+
+              medicines (1) -----> (Many) sales
+              (medicine_id)        (medicine_id FK)
+
+
+========================================================
+3. SQL QUERIES USED (with explanation)
+========================================================
+
+
+--- LOGIN ---
+
+Query:
+  SELECT id, username
+  FROM admin
+  WHERE username = %s AND password = %s;
+
+Explanation:
+  Checks if the given username and password match
+  any row in the admin table. If a row is found,
+  login is successful. If not, login is rejected.
+
+  %s = parameterized placeholder (prevents SQL injection).
+
+
+--- FETCH ALL MEDICINES ---
+
+Query:
+  SELECT medicine_id, name, price, quantity, expiry_date
+  FROM medicines
+  ORDER BY name;
+
+Explanation:
+  Retrieves all medicines sorted alphabetically by name.
+
+
+--- SEARCH MEDICINES ---
+
+Query:
+  SELECT medicine_id, name, price, quantity, expiry_date
+  FROM medicines
+  WHERE name ILIKE %s
+  ORDER BY name;
+
+Explanation:
+  ILIKE is PostgreSQL's case-insensitive pattern matching.
+  If user searches "para", the query becomes:
+    WHERE name ILIKE '%para%'
+  This finds "Paracetamol", "PARACETAMOL", etc.
+
+
+--- INSERT MEDICINE ---
+
+Query:
+  INSERT INTO medicines (name, price, quantity, expiry_date)
+  VALUES (%s, %s, %s, %s)
+  RETURNING medicine_id;
+
+Explanation:
+  Inserts a new medicine into the table.
+  RETURNING medicine_id gives us back the auto-generated ID
+  of the newly inserted row.
+
+
+--- UPDATE MEDICINE ---
+
+Query (example):
+  UPDATE medicines
+  SET name = %s, price = %s, quantity = %s, expiry_date = %s
+  WHERE medicine_id = %s;
+
+Explanation:
+  Updates specific fields of a medicine identified by its ID.
+  Only the fields that the user changed are included in SET.
+
+
+--- DELETE MEDICINE ---
+
+Queries:
+  DELETE FROM sales WHERE medicine_id = %s;
+  DELETE FROM medicines WHERE medicine_id = %s;
+
+Explanation:
+  First deletes all sales records linked to that medicine
+  (because of the foreign key constraint), then deletes
+  the medicine itself. If we try to delete the medicine
+  without deleting sales first, PostgreSQL will throw a
+  foreign key violation error.
+
+
+--- PROCESS A SALE (with Transaction) ---
+
+This is the most important operation. It uses a TRANSACTION.
+
+Step 1: Check stock
+  SELECT quantity, price, name
+  FROM medicines
+  WHERE medicine_id = %s;
+
+Step 2: Validate
+  If requested quantity > available stock → reject the sale.
+
+Step 3: Reduce stock
+  UPDATE medicines
+  SET quantity = quantity - %s
+  WHERE medicine_id = %s;
+
+Step 4: Record the sale
+  INSERT INTO sales (medicine_id, quantity_sold, total_price)
+  VALUES (%s, %s, %s)
+  RETURNING sale_id;
+
+Step 5: COMMIT the transaction.
+
+If ANY step fails → ROLLBACK (undo all changes).
+
+WHY TRANSACTION?
+  Imagine Step 3 succeeds (stock reduced) but Step 4 fails
+  (sale not recorded). Now the stock is reduced but there
+  is no sale record — the data is INCONSISTENT.
+
+  A transaction ensures ALL steps succeed together,
+  or NONE of them happen. This is called ATOMICITY
+  (one of the ACID properties).
+
+  ACID Properties:
+    A - Atomicity    : All or nothing
+    C - Consistency  : Data stays valid after transaction
+    I - Isolation    : Transactions don't interfere with each other
+    D - Durability   : Once committed, data is permanent
+
+
+--- FETCH SALES (with JOIN) ---
+
+Query:
+  SELECT s.sale_id, m.name, s.quantity_sold,
+         s.total_price, s.sale_date
+  FROM sales s
+  JOIN medicines m ON s.medicine_id = m.medicine_id
+  ORDER BY s.sale_date DESC;
+
+Explanation:
+  This uses a JOIN to combine data from two tables.
+  The sales table only stores medicine_id (a number),
+  but we want to display the medicine NAME.
+  So we JOIN sales with medicines ON their common column
+  (medicine_id) to get the name.
+
+  's' and 'm' are table aliases (short names).
+
+
+--- LOW STOCK ALERT ---
+
+Query:
+  SELECT medicine_id, name, price, quantity, expiry_date
+  FROM medicines
+  WHERE quantity < 10
+  ORDER BY quantity ASC;
+
+Explanation:
+  Finds all medicines with less than 10 units in stock.
+  Sorted by quantity ascending (lowest stock first).
+
+
+--- EXPIRY ALERT ---
+
+Query:
+  SELECT medicine_id, name, price, quantity, expiry_date
+  FROM medicines
+  WHERE expiry_date <= CURRENT_DATE + INTERVAL '30 days'
+  ORDER BY expiry_date ASC;
+
+Explanation:
+  Finds medicines expiring within the next 30 days.
+  CURRENT_DATE = today's date (from PostgreSQL).
+  INTERVAL '30 days' = adds 30 days to today.
+  So this finds medicines where expiry_date is between
+  today and 30 days from now.
+
+
+--- DASHBOARD STATISTICS ---
+
+Queries:
+  SELECT COUNT(*) FROM medicines;
+    --> Total number of medicines
+
+  SELECT COUNT(*) FROM medicines WHERE quantity < 10;
+    --> How many medicines have low stock
+
+  SELECT COUNT(*) FROM medicines
+  WHERE expiry_date <= CURRENT_DATE + INTERVAL '30 days';
+    --> How many medicines are expiring soon
+
+  SELECT COALESCE(SUM(total_price), 0) FROM sales
+  WHERE sale_date::date = CURRENT_DATE;
+    --> Total revenue from sales made TODAY
+
+Explanation:
+  COUNT(*) = counts the number of rows.
+  SUM()    = adds up all values in a column.
+  COALESCE(value, 0) = if value is NULL, use 0 instead.
+  sale_date::date = casts timestamp to date for comparison.
+
+
+========================================================
+4. KEY DBMS CONCEPTS DEMONSTRATED
+========================================================
+
+1. DDL (Data Definition Language)
+   - CREATE TABLE: Creating admin, medicines, sales tables
+   - Defining columns, data types, constraints
+
+2. DML (Data Manipulation Language)
+   - INSERT: Adding medicines, recording sales
+   - SELECT: Fetching data for display
+   - UPDATE: Editing medicine details, reducing stock
+   - DELETE: Removing medicines and related sales
+
+3. Constraints
+   - PRIMARY KEY: Unique identifier for each row
+   - FOREIGN KEY: Links sales to medicines
+   - UNIQUE: No duplicate usernames
+   - NOT NULL: Required fields cannot be empty
+   - DEFAULT: Automatic values (like sale_date)
+
+4. Transactions (ACID)
+   - BEGIN / COMMIT / ROLLBACK
+   - Used in the billing/sales feature
+   - Ensures data consistency
+
+5. JOINs
+   - JOIN between sales and medicines
+   - Combines data from related tables
+
+6. Aggregate Functions
+   - COUNT(): Count rows
+   - SUM(): Total of a column
+   - COALESCE(): Handle NULL values
+
+7. Pattern Matching
+   - ILIKE: Case-insensitive search
+
+8. Date Operations
+   - CURRENT_DATE: Today's date
+   - INTERVAL: Add/subtract time periods
+   - ::date: Type casting
+
+9. Parameterized Queries
+   - Using %s placeholders prevents SQL injection
+   - SQL injection = attacker puts malicious SQL in input
+   - Parameterized queries treat input as DATA, not CODE
+
+10. Referential Integrity
+    - Foreign key ensures orphan records cannot exist
+    - Cannot add a sale for a non-existent medicine
+    - Must delete child records before parent
+
+
+========================================================
+5. FRONTEND OVERVIEW (High Level)
+========================================================
+
+The frontend is built with plain HTML, CSS, and JavaScript.
+
+- HTML files define the structure of each page
+  (forms, tables, buttons, sidebar navigation)
+
+- CSS (style.css) provides the dark-themed visual design
+  with color-coded indicators:
+    Green  = Normal / OK
+    Orange = Warning (expiring soon)
+    Red    = Danger (low stock / expired)
+
+- JavaScript (script.js) handles:
+    - Sending requests to the backend API
+    - Updating the page content dynamically
+    - Login/logout state management
+    - Showing success/error notifications
+
+The frontend communicates with the backend through
+API calls (HTTP requests). No page reloads are needed.
+
+Pages:
+  login.html     - Admin login form
+  index.html     - Dashboard with stats and alerts
+  medicines.html - Table of all medicines with search
+  add.html       - Form to add a new medicine
+  billing.html   - Sale processing with auto price calculation
+
+
+========================================================
+6. HOW DATA FLOWS (Example: Processing a Sale)
+========================================================
+
+1. User selects "Paracetamol" and enters quantity = 5
+
+2. JavaScript sends a POST request to /sales with:
+   { medicine_id: 1, quantity_sold: 5 }
+
+3. Backend receives the request
+
+4. Backend starts a TRANSACTION:
+
+   a. Runs SELECT to check current stock of medicine 1
+      --> Gets: quantity = 97, price = 25.50
+
+   b. Validates: 5 <= 97? Yes, enough stock.
+
+   c. Calculates total: 25.50 x 5 = 127.50
+
+   d. Runs UPDATE to reduce stock: 97 - 5 = 92
+      UPDATE medicines SET quantity = quantity - 5
+      WHERE medicine_id = 1;
+
+   e. Runs INSERT to record the sale:
+      INSERT INTO sales (medicine_id, quantity_sold, total_price)
+      VALUES (1, 5, 127.50);
+
+   f. COMMIT — all changes saved permanently.
+
+5. Backend sends response back:
+   { message: "Sale completed", total_price: 127.50 }
+
+6. JavaScript shows a success notification and
+   displays the receipt on screen.
+
+If anything failed at any step, the backend would
+ROLLBACK — undoing all changes, keeping data consistent.
+
+
+========================================================

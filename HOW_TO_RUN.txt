@@ -1,0 +1,132 @@
+========================================================
+   PharmaCare - Pharmacy Management System
+   HOW TO RUN
+========================================================
+
+
+PREREQUISITES
+--------------
+1. Python 3.10 or above installed
+2. PostgreSQL installed and running
+3. pip (Python package manager)
+
+
+STEP 1: Install Python Dependencies
+-------------------------------------
+Open a terminal/command prompt and run:
+
+    pip install fastapi uvicorn psycopg2-binary
+
+
+STEP 2: Create the Database in PostgreSQL
+-------------------------------------------
+Open a terminal and run:
+
+    psql -U postgres
+
+Enter your PostgreSQL password when prompted, then run:
+
+    CREATE DATABASE pharmacy_db;
+    \q
+
+(If the database already exists, skip this step.)
+
+
+STEP 3: Update Database Password (if needed)
+----------------------------------------------
+Open the file:  backend/db.py
+
+Find this section near the top:
+
+    DB_CONFIG = {
+        "host": "localhost",
+        "port": 5432,
+        "database": "pharmacy_db",
+        "user": "postgres",
+        "password": "asmit",       <-- Change this to YOUR PostgreSQL password
+    }
+
+
+STEP 4: Start the Server
+--------------------------
+Open a terminal, navigate to the backend folder:
+
+    cd backend
+
+Then run:
+
+    uvicorn main:app --reload
+
+You should see:
+
+    INFO:     Uvicorn running on http://127.0.0.1:8000
+    INFO:     Application startup complete.
+
+The database tables (admin, medicines, sales) are created
+automatically when the server starts for the first time.
+
+
+STEP 5: Open in Browser
+--------------------------
+Open your browser and go to:
+
+    http://localhost:8000
+
+Login with:
+
+    Username:  admin
+    Password:  admin123
+
+
+STEP 6: Use the System
+------------------------
+After login you can:
+
+  - Dashboard     : See total medicines, low stock, expiry alerts, today's sales
+  - Medicines     : View, search, edit, delete medicines
+  - Add Medicine  : Add new medicines to inventory
+  - Billing       : Select medicine, enter quantity, process sale
+  - Logout        : End your session
+
+
+TO STOP THE SERVER
+-------------------
+Press Ctrl + C in the terminal where the server is running.
+
+
+FOLDER STRUCTURE
+-----------------
+project2/
+  backend/
+    db.py          --> Database connection and table setup
+    main.py        --> All API endpoints (FastAPI)
+  frontend/
+    login.html     --> Login page
+    index.html     --> Dashboard
+    medicines.html --> Medicine inventory table
+    add.html       --> Add medicine form
+    billing.html   --> Billing / sales page
+    style.css      --> All styling
+    script.js      --> All frontend logic
+  requirements.txt --> Python packages needed
+  HOW_TO_RUN.txt   --> This file
+  PROJECT_EXPLANATION.txt --> Detailed project explanation
+
+
+COMMON ISSUES
+--------------
+1. "ModuleNotFoundError: No module named 'psycopg2'"
+   --> Run: pip install psycopg2-binary
+
+2. "connection refused" or "password authentication failed"
+   --> Make sure PostgreSQL is running
+   --> Check password in backend/db.py matches your PostgreSQL password
+
+3. "database pharmacy_db does not exist"
+   --> Create it using: CREATE DATABASE pharmacy_db;  (in psql)
+
+4. Port 8000 already in use
+   --> Use a different port: uvicorn main:app --reload --port 8001
+   --> Then open http://localhost:8001
+
+========================================================

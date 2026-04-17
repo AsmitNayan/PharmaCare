@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PharmaCare Dashboard — Overview of medicines, alerts, and sales">
+    <title>PharmaCare — Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="app-layout">
+        <!-- ========== SIDEBAR ========== -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">💊</div>
+                <div>
+                    <h2>PharmaCare</h2>
+                    <span>Management System</span>
+                </div>
+            </div>
+
+            <nav>
+                <a href="/dashboard" class="active">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/medicines-page">
+                    <span class="nav-icon">💊</span>
+                    <span>Medicines</span>
+                </a>
+                <a href="/add-page">
+                    <span class="nav-icon">➕</span>
+                    <span>Add Medicine</span>
+                </a>
+                <a href="/billing-page">
+                    <span class="nav-icon">🧾</span>
+                    <span>Billing</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="#" onclick="logout(); return false;">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- ========== MAIN CONTENT ========== -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h1>Dashboard</h1>
+                    <p id="greetUser">Welcome back, Admin</p>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card purple">
+                    <div class="stat-icon">💊</div>
+                    <div class="stat-info">
+                        <h3 id="statTotal">0</h3>
+                        <p>Total Medicines</p>
+                    </div>
+                </div>
+
+                <div class="stat-card red">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-info">
+                        <h3 id="statLowStock">0</h3>
+                        <p>Low Stock Items</p>
+                    </div>
+                </div>
+
+                <div class="stat-card orange">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-info">
+                        <h3 id="statExpiring">0</h3>
+                        <p>Expiring Soon</p>
+                    </div>
+                </div>
+
+                <div class="stat-card green">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <h3 id="statSales">₹0</h3>
+                        <p>Today's Sales</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts Section -->
+            <div class="page-header" style="margin-top:8px;">
+                <h1 style="font-size:1.15rem;">Active Alerts</h1>
+            </div>
+
+            <div class="alerts-grid" id="alertsList">
+                <!-- Populated by JS -->
+                <div class="loading-spinner" style="grid-column:1/-1;"></div>
+            </div>
+
+            <!-- Recent Sales Table -->
+            <div class="table-container mt-3">
+                <div class="table-header">
+                    <h2>📋 Recent Sales</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Medicine</th>
+                            <th>Qty Sold</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentSalesBody">
+                        <tr><td colspan="4"><div class="loading-spinner"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
