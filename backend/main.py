@@ -63,11 +63,11 @@ def on_startup():
 def serve_login():
     return FileResponse(os.path.join(FRONTEND_DIR, "login.html"))
 
-@app.get("/dashboard")
-def serve_dashboard():
-    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
-
-@app.get("/medicines-page")
+def buggy_function():
+    x = "hello"
+    return x + str(5)
+    # rest of the function remains the same
+def test_error():
 def serve_medicines():
     return FileResponse(os.path.join(FRONTEND_DIR, "medicines.html"))
 
