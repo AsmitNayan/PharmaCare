@@ -95,6 +95,8 @@ def login(req: LoginRequest):
 
     try:
         # Parameterized query prevents SQL injection
+        if '\x00' in req.username or '\x00' in req.password:
+            raise HTTPException(status_code=400, detail="Invalid characters in credentials")
         cur.execute(
             "SELECT id, username FROM admin WHERE username = %s AND password = %s;",
             (req.username, req.password),
