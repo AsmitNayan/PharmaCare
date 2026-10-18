@@ -125,9 +125,9 @@ def get_medicines(search: Optional[str] = None):
 
     try:
         if search:
-            if "\x00" in search:
-                raise HTTPException(status_code=400, detail="Invalid search parameter")
             # ILIKE = case-insensitive pattern matching (PostgreSQL)
+            if '\x00' in search:
+                raise HTTPException(status_code=400, detail="Invalid search parameter")
             cur.execute(
                 "SELECT medicine_id, name, price, quantity, expiry_date "
                 "FROM medicines WHERE name ILIKE %s ORDER BY name;",
